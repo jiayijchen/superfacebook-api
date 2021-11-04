@@ -19,8 +19,8 @@ if ($conn->connect_error) {
 if (isset($_GET["action"])) {
     $action = $_GET["action"];
     switch ($action) {
-        case "readall":
-            // echo "READ ALL HEROES";
+        case "search":
+            echo "READ $text HEROES";
             readAllHeroes();
             break;
         case "create":
@@ -41,6 +41,8 @@ if (isset($_GET["action"])) {
 } else {
     return;
 }
+
+// 
 
 // Read all heroes
 function readAllHeroes()
@@ -65,26 +67,50 @@ function readAllHeroes()
 }
 
 // Create a new hero
-function createHero() {
+function createHero()
+{
     global $conn;
-    if (!isset($_POST["name"]) || !isset($_POST["about_me"]) || !isset($_POST["biography"])) {
+    if (!isset($_POST["name"]) || !isset($_POST["about_me"]) || !isset($_POST["biography"]) || !isset($_POST["ability"])) {
         echo "Error: Missing parameters to create hero.";
         return;
     }
     $name = $_POST["name"];
     $aboutme = $_POST["about_me"];
     $biography = $_POST["biography"];
-    $sql = "INSERT INTO heroes (name, about_me, biography)
-            VALUES ('$name', '$aboutme', '$biography')";
+    $ability = $_POST["ability"];
+    $hero_id = -1;
+    $ability_id = -1;
 
-    if ($conn->query($sql) === TRUE) {
-        echo "New record created successfully";
+    $sqlHeroes = "INSERT INTO heroes (name, about_me, biography) VALUES ('$name', '$aboutme', '$biography')";
+    $sqlAbilities = "INSERT INTO ability_type (ability) VALUES ('$ability')";
+
+    if ($conn->query($sqlHeroes) === TRUE) {
+        $hero_id = $conn->insert_id;
+        echo "$hero_id";
+
+        if ($conn->query($sqlAbilities) === TRUE) {
+            $ability_id = $conn->insert_id;
+            echo "ability_id";
+        } else { // Ability_type already exists, so select
+            $sqlAbilities = "SELECT id FROM ability_type WHERE ability='$ability';";
+            $result = ($conn->query($sqlAbilities))->fetch_assoc();
+            $ability_id = $result["id"];
+            echo "ability_id";
+        }
+        $sqlHeroAbility = "INSERT INTO abilities (hero_id, ability_id) VALUES ('$hero_id', '$ability_id');";
+        if ($conn->query($sqlHeroAbility) === TRUE) {
+            echo "New record created successfully";
+        } else {
+            echo "Error with SQL query: <br><br>" . $sqlHeroAbility . "<br><br>" . $conn->error . ".";
+        }
     } else {
-        echo "Error with SQL query: <br><br>" . $sql . "<br><br>" . $conn->error . ".";
+        echo "Error with SQL query: <br><br>" . $sqlHeroes . "<br><br>" . $conn->error . ".";
     }
 }
 
-function updateHero() {
+// Update a hero
+function updateHero()
+{
     global $conn;
     if (!isset($_POST["name"]) || !isset($_POST["about_me"]) || !isset($_POST["biography"])) {
         echo "Error: Missing parameters to create hero.";
