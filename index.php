@@ -15,19 +15,17 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Get action
-$action = $_GET["action"];
-
-// IF action, handle case
-if ($action != "") {
+// IF there is an action, get it anc handle case
+if (isset($_GET["action"])) {
+    $action = $_GET["action"];
     switch ($action) {
         case "readall":
-            // echo "<h1>READ ALL HEROES</h1>";
+            // echo "READ ALL HEROES";
             readAllHeroes();
             break;
         case "create":
-            echo "Create a hero";
-            // createHero($_GET["name"], $_GET["tagline"]);
+            // echo "CREATE A HERO";
+            createHero();
             break;
         case "update":
             echo "Update hero";
@@ -38,7 +36,10 @@ if ($action != "") {
             // deleteHero($_GET["id"]);
             break;
         default:
+            echo "Error 420: There is no action.";
     }
+} else {
+    return;
 }
 
 // Read all heroes
@@ -54,57 +55,45 @@ function readAllHeroes()
         while ($row = $result->fetch_assoc()) {
             $rows[] = $row;
             echo "id: " . $row["id"] . "<br>
-                  name: <b>" . $row["NAME"] . "</b><br>
+                  name: <b>" . $row["name"] . "</b><br>
                   about: <i>" . $row["about_me"] . "</i><br>
                   biography: <i>" . $row["biography"] . "</i><br><br>";
         }
     } else {
         echo "0 results";
     }
-    echo json_encode($rows);
 }
 
 // Create a new hero
-function createHero($name, $tagline) {
+function createHero() {
     global $conn;
-    $sql = "INSERT INTO heroes (nickname, tagline)
-            VALUES ('$name', '$tagline')";
+    if (!isset($_POST["name"]) || !isset($_POST["about_me"]) || !isset($_POST["biography"])) {
+        echo "Error: Missing parameters to create hero.";
+        return;
+    }
+    $name = $_POST["name"];
+    $aboutme = $_POST["about_me"];
+    $biography = $_POST["biography"];
+    $sql = "INSERT INTO heroes (name, about_me, biography)
+            VALUES ('$name', '$aboutme', '$biography')";
 
     if ($conn->query($sql) === TRUE) {
         echo "New record created successfully";
     } else {
-        echo "Error: " . $sql . "<br>" . $conn->error;
+        echo "Error with SQL query: <br><br>" . $sql . "<br><br>" . $conn->error . ".";
     }
 }
 
-// read
-// function readAllHeroes()
-// {
-//     // output heroes from the array
-
-//     $heroes = $dbConn->getAllHeroes();
-
-//     //echo "<pre>" . print_r($heroes, 1) . "</pre>";
-
-//     $json = json_encode($heroes);
-//     echo $json;
-// }
+function updateHero() {
+    global $conn;
+    if (!isset($_POST["name"]) || !isset($_POST["about_me"]) || !isset($_POST["biography"])) {
+        echo "Error: Missing parameters to create hero.";
+        return;
+    }
+}
 
 // function updateHero($id, $name, $tagline)
 // {
-//     //
-//     //array_splice($_SESSION["heroes"],$index,1,[[$name, $tagline]]);
-//     $servername = "localhost";
-//     $username = "root";
-//     $password = "";
-//     $dbname = "heroes_db";
-
-//     // Create connection
-//     $conn = new mysqli($servername, $username, $password, $dbname);
-//     // Check connection
-//     if ($conn->connect_error) {
-//         die("Connection failed: " . $conn->connect_error);
-//     }
 
 //     $sql = "UPDATE heroes SET tagline='$tagline', nickname='$name' WHERE id=$id";
 
