@@ -136,7 +136,7 @@ function updateHero()
 }
 
 //
-function deleteHero() 
+function deleteHero()
 {
     global $conn;
 
@@ -158,7 +158,7 @@ function deleteHero()
 function readAllHeroes()
 {
     global $conn;
-    
+
     $sql = "SELECT heroes.name, heroes.about_me, heroes.biography, GROUP_CONCAT(ability_type.ability) AS abilities
             FROM abilities
             INNER JOIN heroes ON heroes.id=abilities.hero_id
@@ -197,6 +197,64 @@ function readAllHeroes()
     }
 }
 
+function empowerHero()
+{
+    global $conn;
+
+    // Check for correct parameters to create
+    if (!isset($_GET["name"])) {
+        echo "Error: Missing name parameter to empower a hero.";
+        return;
+    }
+    $name = $_GET["name"];
+
+    if (!isset($_POST["ability"])) {
+        echo "Error: Missing ability parameter to empower a hero with.";
+        return;
+    }
+
+    // Set values
+    $name = $_GET["name"];
+    $ability = $_POST["ability"];
+    $hero_id = -1;
+    $ability_id = -1;
+
+    $sql = "SELECT id FROM heroes WHERE name='$name';";
+    $result = $conn->query($sql);
+    if ($result->num_rows > 0) {
+        $row = $result->fetch_assoc();
+        $hero_id = $row["id"];
+    } else {
+        echoError($sql, $conn->error);
+        return;
+    }
+
+    $sql = "SELECT id FROM ability_type WHERE ability='$ability';";
+    $result = $conn->query($sql);
+    if ($result->num_rows > 0) {
+        $row = $result->fetch_assoc();
+        $ability_id = $row["id"];
+    } else {
+        // ability_type doesn't exist, so insert
+        $sql = "INSERT INTO ability_type (ability) VALUES ('$ability')";
+        if ($conn->query($sql) === TRUE) {
+            $ability_id = $conn->insert_id;
+        } else {
+            // error: pre-existing ability (should never happen with out if-statement)
+            echoError($sql, $conn->error);
+        }
+    }
+
+    // Test query, if succesful, pull created id
+    $sql = "INSERT INTO abilities (hero_id, ability_id) VALUES ('$hero_id', '$ability_id');";
+    if ($conn->query($sql) === TRUE) {
+        echo "Success: Hero empowered.";
+    } else {
+        // error: pre-existing hero-ability-relationship (should never happen)
+        echoError($sql, $conn->error);
+    }
+}
+
 // Convert output to parsable JSON
 function toJson($jsonstring)
 {
@@ -228,10 +286,10 @@ if (isset($_GET["action"])) {
             readAllHeroes();
             break;
         default:
-            echo "Error 420: No action specified.";
+            echo "Error 422: No action specified.";
     }
 } else {
-    echo "Error 420: There is no action.";
+    echo "Error 422: There is no action.";
     return;
 }
 
