@@ -15,32 +15,6 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-// Read all heroes
-function readAllHeroes()
-{
-    global $conn;
-    $sql = "SELECT * FROM heroes";
-    $result = $conn->query($sql);
-
-    if ($result->num_rows > 0) {
-        // output data of each row
-        $rows = array();
-        while ($row = $result->fetch_assoc()) {
-            $rows[] = $row;
-            // echo "id: " . $row["id"] . "<br>
-            //       name: <b>" . $row["name"] . "</b><br>
-            //       about: <i>" . $row["about_me"] . "</i><br>
-            //       biography: <i>" . $row["biography"] . "</i><br><br>";
-            //print json_encode($row);
-        }
-        toJson($rows);
-        // echo json_encode($rows);
-
-    } else {
-        echo "0 results";
-    }
-}
-
 // Create a new hero
 function createHero()
 {
@@ -162,7 +136,8 @@ function updateHero()
 }
 
 //
-function deleteHero() {
+function deleteHero() 
+{
     global $conn;
 
     if (!isset($_GET["name"])) {
@@ -179,39 +154,60 @@ function deleteHero() {
     }
 }
 
+// Read all heroes
+function readAllHeroes()
+{
+    global $conn;
+    
+    $sql = "SELECT heroes.name, heroes.about_me, heroes.biography, GROUP_CONCAT(ability_type.ability) AS abilities
+            FROM abilities
+            INNER JOIN heroes ON heroes.id=abilities.hero_id
+            LEFT JOIN ability_type ON ability_type.id=abilities.ability_id
+            GROUP BY heroes.id";
+    // $sql = "SELECT heroes.name, 
+    //                heroes.about_me, 
+    //                heroes.biography, 
+    //                GROUP_CONCAT(ability_type.ability) AS abilities, 
+    //                GROUP_CONCAT(relationship_types.type) AS relationships
+    //             FROM abilities
+    //             INNER JOIN heroes ON heroes.id=abilities.hero_id
+    //             LEFT JOIN ability_type ON ability_type.id=abilities.ability_id
+    //             INNER JOIN relationships ON heroes.id=relationships.hero1_id
+    //             LEFT JOIN relationship_types ON relationship_types.id=relationships.type_id
+    //             GROUP BY heroes.id";
+
+    $result = $conn->query($sql);
+
+    if ($result->num_rows > 0) {
+        // output data of each row
+        $rows = array();
+        while ($row = $result->fetch_assoc()) {
+            $rows[] = $row;
+            // echo "id: " . $row["id"] . "<br>
+            //       name: <b>" . $row["name"] . "</b><br>
+            //       about: <i>" . $row["about_me"] . "</i><br>
+            //       biography: <i>" . $row["biography"] . "</i><br><br>";
+            //print json_encode($row);
+        }
+        toJson($rows);
+        // echo json_encode($rows);
+
+    } else {
+        echo "0 results";
+    }
+}
+
+// Convert output to parsable JSON
 function toJson($jsonstring)
 {
     echo "<pre style='word-wrap: break-word; white-space: pre-wrap;'>" . json_encode($jsonstring) . "</pre>";
 }
 
+// Format error
 function echoError($sql, $error)
 {
     echo "Error with SQL query: <br><br>" . $sql . "<br><br>" . $error . ".";
 }
-
-// function deleteHero($id)
-// {
-//     $servername = "localhost";
-//     $username = "root";
-//     $password = "";
-//     $dbname = "heroes_db";
-
-//     // Create connection
-//     $conn = new mysqli($servername, $username, $password, $dbname);
-//     // Check connection
-//     if ($conn->connect_error) {
-//         die("Connection failed: " . $conn->connect_error);
-//     }
-
-//     // sql to delete a record
-//     $sql = "DELETE FROM heroes WHERE id=$id";
-
-//     if ($conn->query($sql) === TRUE) {
-//         echo "Record deleted successfully";
-//     } else {
-//         echo "Error deleting record: " . $conn->error;
-//     }
-// }
 
 if (isset($_GET["action"])) {
     $action = $_GET["action"];
@@ -222,19 +218,20 @@ if (isset($_GET["action"])) {
         case "search":
             searchHero();
             break;
-        case "readall":
-            readAllHeroes();
-            break;
         case "update":
             updateHero();
             break;
         case "delete":
             deleteHero();
             break;
+        case "readall":
+            readAllHeroes();
+            break;
         default:
-            echo "Error 420: There is no action.";
+            echo "Error 420: No action specified.";
     }
 } else {
+    echo "Error 420: There is no action.";
     return;
 }
 
