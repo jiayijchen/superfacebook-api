@@ -22,7 +22,7 @@ function createHero()
 
     // Check for correct parameters to create
     if (!isset($_POST["name"]) || !isset($_POST["about_me"]) || !isset($_POST["biography"]) || !isset($_POST["ability"])) {
-        echo "Error: Missing parameter(s) to create hero.";
+        echo "<h3>Error 422: Missing parameter(s) to create hero.</h3>";
         return;
     }
 
@@ -57,7 +57,7 @@ function createHero()
 
         $sql = "INSERT INTO abilities (hero_id, ability_id) VALUES ('$hero_id', '$ability_id');";
         if ($conn->query($sql) === TRUE) {
-            echo "New record created successfully.";
+            echo "<h3>Success: New record created successfully.</h3>";
         } else {
             // error: pre-existing hero-ability-relationship (should never happen)
             echoError($sql, $conn->error);
@@ -73,7 +73,8 @@ function searchHero()
 {
     global $conn;
     if (!isset($_GET["name"])) {
-        echo "Error: Missing name parameter to search for a hero.";
+        echo "<h3>Error 422: Missing name parameter to search for a hero.</h3>";
+        return;
     }
     $name = $_GET["name"];
 
@@ -93,7 +94,7 @@ function searchHero()
         }
         toJson($rows);
     } else {
-        echo "<h3> 0 search results </h3>";
+        echo "<h3>0 search results </h3>";
     }
 }
 
@@ -103,13 +104,13 @@ function updateHero()
     global $conn;
 
     if (!isset($_GET["name"])) {
-        echo "Error: Missing name parameter to update a hero.";
+        echo "<h3>Error 422: Missing name parameter to update a hero.</h3>";
         return;
     }
     $name = $_GET["name"];
 
     if (!isset($_POST["about_me"]) && !isset($_POST["biography"]) && !isset($_POST["ability"])) {
-        echo "Error: Missing parameter(s) to update hero.";
+        echo "<h3>Error 422: Missing parameter(s) to update hero.</h3>";
         return;
     }
 
@@ -129,9 +130,9 @@ function updateHero()
 
     $sql = "UPDATE heroes SET " . implode(', ', $updateValues) . "WHERE name='$name'";
     if ($conn->query($sql) === TRUE) {
-        echo "Record updated successfully.";
+        echo "<h3>Success: Record updated successfully.</h3>";
     } else {
-        echo "Error updating record: " . $conn->error;
+        echoError($sql, $conn->error);
     }
 }
 
@@ -141,16 +142,16 @@ function deleteHero()
     global $conn;
 
     if (!isset($_GET["name"])) {
-        echo "Error: Missing name parameter to delete a hero.";
+        echo "<h3>Error 422: Missing name parameter to delete a hero.</h3>";
         return;
     }
     $name = $_GET["name"];
 
     $sql = "DELETE FROM heroes WHERE name='$name'";
     if ($conn->query($sql) === TRUE) {
-        echo "Record deleted successfully";
+        echo "<h3>Success: Record deleted successfully.</h3>";
     } else {
-        echo "Error deleting record: " . $conn->error;
+        echoError($sql, $conn->error);
     }
 }
 
@@ -159,7 +160,7 @@ function readAllHeroes()
 {
     global $conn;
 
-    $sql = "SELECT heroes.name, heroes.about_me, heroes.biography, GROUP_CONCAT(ability_type.ability) AS abilities
+    $sql = "SELECT heroes.id, heroes.name, heroes.about_me, heroes.biography, GROUP_CONCAT(ability_type.ability) AS abilities
             FROM abilities
             INNER JOIN heroes ON heroes.id=abilities.hero_id
             LEFT JOIN ability_type ON ability_type.id=abilities.ability_id
@@ -183,17 +184,16 @@ function readAllHeroes()
         $rows = array();
         while ($row = $result->fetch_assoc()) {
             $rows[] = $row;
-            // echo "id: " . $row["id"] . "<br>
-            //       name: <b>" . $row["name"] . "</b><br>
-            //       about: <i>" . $row["about_me"] . "</i><br>
-            //       biography: <i>" . $row["biography"] . "</i><br><br>";
-            //print json_encode($row);
+            echo "id: " . $row["id"] . "<br>
+                  name: <b>" . $row["name"] . "</b><br>
+                  about: <i>" . $row["about_me"] . "</i><br>
+                  biography: <i>" . $row["biography"] . "</i><br>
+                  abilities: <i>" . $row["abilities"] . "</i><br><br>";
         }
-        toJson($rows);
-        // echo json_encode($rows);
+        //toJson($rows);
 
     } else {
-        echo "0 results";
+        echo "<h3>There are no heroes.</h3>";
     }
 }
 
@@ -203,13 +203,13 @@ function empowerHero()
 
     // Check for correct parameters to create
     if (!isset($_GET["name"])) {
-        echo "Error: Missing name parameter to empower a hero.";
+        echo "<h3>Error 422: Missing name parameter to empower a hero.</h3>";
         return;
     }
     $name = $_GET["name"];
 
     if (!isset($_POST["ability"])) {
-        echo "Error: Missing ability parameter to empower a hero with.";
+        echo "<h3>Error 422: Missing ability parameter to empower hero with.</h3>";
         return;
     }
 
@@ -248,7 +248,7 @@ function empowerHero()
     // Test query, if succesful, pull created id
     $sql = "INSERT INTO abilities (hero_id, ability_id) VALUES ('$hero_id', '$ability_id');";
     if ($conn->query($sql) === TRUE) {
-        echo "Success: Hero empowered.";
+        echo "<h3>Success: Hero empowered. </h3>";
     } else {
         // error: pre-existing hero-ability-relationship (should never happen)
         echoError($sql, $conn->error);
@@ -264,7 +264,7 @@ function toJson($jsonstring)
 // Format error
 function echoError($sql, $error)
 {
-    echo "Error with SQL query: <br><br>" . $sql . "<br><br>" . $error . ".";
+    echo "<h3>Error 422: <br><br>" . $sql . "<br><br>" . $error . ".</h3>";
 }
 
 if (isset($_GET["action"])) {
@@ -285,11 +285,14 @@ if (isset($_GET["action"])) {
         case "readall":
             readAllHeroes();
             break;
+        case "empower":
+            empowerHero();
+            break;
         default:
-            echo "Error 422: No action specified.";
+            echo "<h3>Error 404: Invalid action.</h3>";
     }
 } else {
-    echo "Error 422: There is no action.";
+    echo "<h3>Error 404: There is no action.</h3>";
     return;
 }
 
